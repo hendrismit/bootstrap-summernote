@@ -2,17 +2,19 @@
 Super Simple WYSIWYG Editor on Bootstrap(3.0 and 2.x).
 
 [![Build Status](https://secure.travis-ci.org/HackerWins/summernote.png)](http://travis-ci.org/HackerWins/summernote)
+[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
 
 ### Summernote
 Summernote is a javascript program that helps you to create WYSIWYG Editor on web.
 
-Demo Page: http://hackerwins.github.io/summernote/
+Home Page: http://hackerwins.github.io/summernote/
 
 ### Why Summernote?
 
 Summernote has something specials no like others.
-
-Simple UI, Interative WYSIWYG editing, easy integrate Backend server and so much others.
+* Simple UI
+* Interative WYSIWYG editing
+* Handy integration with server
 
 #### Inspired by
 * Gmail WYSIWYG Editor (http://www.gmail.com)
@@ -23,19 +25,21 @@ Simple UI, Interative WYSIWYG editing, easy integrate Backend server and so much
 Summernote uses opensouce libraries(jQuery, bootstrap, fontAwesome) 
 
 #### 01. include js/css
+
 Include Following code into `<head>` tag of your HTML:
+
 ```html
 <!-- include libries(jQuery, bootstrap, fontawesome) -->
 <script type="text/javascript" src="//code.jquery.com/jquery-1.9.1.min.js"></script> 
-<!-- bootstrap v3 -->
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.1/css/bootstrap.min.css" />
-<script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.1/js/bootstrap.min.js"></script>
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.min.css" />
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+<script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" />
 
 <!-- include summernote css/js-->
 <link rel="stylesheet" href="summernote.css" />
 <script type="text/javascript" src="summernote.min.js"></script>
 ```
+
 If your summernote download is placed in a different folder, don't forget to change file's paths.
 
 #### 02. target elements
@@ -82,57 +86,63 @@ $('#summernote').destroy();
 * Clipboard
 * Media Object Selection
 
-#### v0.5 2013-12-31
+### Change Log
+
+#### v0.5 2013-12-29
 * Support both Font-Awesome 3.x and 4.x
 * CodeMirror as Codeview
 * Insert Video (by cdownie)
-* Locale (by hendrismit, tschiela)
-* Bug fixes
-
-### Change Log
+* Support 5 Languages(by hendrismit, tschiela, inomies, cverond)
+* Restructuring: jQuery build pattern
 
 #### v0.4 2013-11-01
-* `ADDED` Support both Bootstrap 3.0 and 2.x
-* `ADDED` Fullscreen
-* `ADDED` Code View
-* `ADDED` Image Upload callback
+* Support both Bootstrap 3.0 and 2.x
+* Fullscreen
+* Codeview
+* Image Upload callback
 
 #### v0.3 2013-09-01
-* `FIXED` bugs(image upload, fontsize, tab, recent color, ...)
-* `ADDED` help dialog(keyboard shortcut)
-* `ADDED` init options(event callbacks, custom toolbar)
-* `ADDED` resize bar
-* `ADDED` support IE8 Beta(some range bugs, can't insert Image)
+* Bugs(image upload, fontsize, tab, recent color, ...)
+* Help dialog(keyboard shortcut)
+* Init options(event callbacks, custom toolbar)
+* Resize bar
+* Support IE8 Beta(some range bugs, can't insert Image)
 
 #### v0.2, 2013-08-01
-* `ADDED` undo/redo
-* `ADDED` image sizing handle and popover
-* `ADDED` support standalone css
-* `ADDED` support Multiple Editor
-* `REMOVED` jQuery.curstyles dependency
+* Undo/Redo
+* Image sizing handle and popover
+* Support standalone css
+* Support Multiple Editor
+* Remove jQuery.curstyles dependency
 
 #### v0.1, 2013-07-01
-* `ADDED` font style: size, color, bold, italic, underline, remove font style
-* `ADDED` para style: bullet, align, outdent, indent, line height
-* `ADDED` image: drag & drop, dialog
-* `ADDED` link: popover and dialog
-* `ADDED` table: create table with dimension picker
+* Font style: size, color, bold, italic, underline, remove font style
+* Para style: bullet, align, outdent, indent, line height
+* Image: drag & drop, dialog
+* Link: popover and dialog
+* Table: create table with dimension picker
 
 ### for Hacker
 
 #### structure of summernote.js
 
 ```
-$.extend - Renderer (Markup)
-         \ EventHandler - Editor - Range (W3CRange extention)
-                                 \ Style (Style Getter and Setter)
-                                 \ History (Store on jQuery.data)
-                        \ Toolbar
-                        \ Popover
-                        \ Handle
-                        \ Dialog
-----------Common Utils----------
-Dom, List, Func
+summernote.js - Renderer.js (Generate markup) - Locale.js (Locale object)
+              ㄴEventHandler.js - Editor.js  (Abstract editor)
+                                ㄴStyle.js   (Style Getter and Setter)
+                                ㄴHistory.js (Store on jQuery.data)
+                                ㄴToolbar.js (Toolbar module)
+                                ㄴPopover.js (Popover module)
+                                ㄴHandle.js  (Handle module)
+                                ㄴDialog.js  (Dialog module)
+-----------------------------Core Script-----------------------------
+  agent.js  (agent information)
+  async.js  (aysnc utility)
+  key.js    (keycode object)
+  dom.js    (dom functions)
+  list.js   (list functions)
+  range.js  (W3CRange extention)
+---------------------------------------------------------------------
 ```
 
 #### build summernote
@@ -140,6 +150,11 @@ Dom, List, Func
 # grunt-cli is need by grunt; you might have this installed already
 npm install -g grunt-cli
 npm install
+
+# build full version of summernote: dist/summernote.js
+grunt build
+
+# generate minified copy: dist/summernote.min.js, dist/summernote.css
 grunt dist
 ```
 At this point, you should now have a `build/` directory populated with everything you need to use summernote.
@@ -148,6 +163,14 @@ At this point, you should now have a `build/` directory populated with everythin
 run tests with PhantomJS
 ```bash
 grunt test
+```
+
+#### start local server for developing summernote.
+run local server with connect and watch.
+```bash
+# this will open a browser on http://localhost:3000.
+grunt server
+# If you change source code, automatically reload your page.
 ```
 
 #### Coding convention

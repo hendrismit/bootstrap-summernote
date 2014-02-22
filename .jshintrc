@@ -11,14 +11,21 @@
     "unused": true,
     "trailing": true,
     "white": true,
-    "maxparams": 5,
+    "maxparams": 17,
     "maxdepth": 5,
     "maxstatements": 300,
-    "maxlen": 120,
+    "maxlen": 140,
     "evil": true,
     "browser": true,
     "devel": true,
     "jquery": true,
     "node": true,
-    "worker": true
+    "worker": true,
+    "globals": {
+        "define": true,
+        "test": true,
+        "ok": true,
+        "equal": true,
+        "deepEqual": true
+    }
 }
