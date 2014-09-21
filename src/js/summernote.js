@@ -1,7 +1,7 @@
 define([
-  'core/agent', 'core/dom',
-  'settings',
-  'EventHandler', 'Renderer'
+  'summernote/core/agent', 'summernote/core/dom',
+  'summernote/settings',
+  'summernote/EventHandler', 'summernote/Renderer'
 ], function (agent, dom, settings, EventHandler, Renderer) {
   // jQuery namespace for summernote
   $.summernote = $.summernote || {};
@@ -39,19 +39,19 @@ define([
         // Textarea: auto filling the code before form submit.
         if (dom.isTextarea($holder[0])) {
           $holder.closest('form').submit(function () {
-            $holder.html($holder.code());
+            $holder.val($holder.code());
           });
         }
       });
 
       // focus on first editable element
-      if (this.first() && options.focus) {
+      if (this.first().length && options.focus) {
         var info = renderer.layoutInfoFromHolder(this.first());
         info.editable.focus();
       }
 
       // callback on init
-      if (this.length > 0 && options.oninit) {
+      if (this.length && options.oninit) {
         options.oninit();
       }
 
@@ -69,16 +69,16 @@ define([
       // get the HTML contents of note
       if (sHTML === undefined) {
         var $holder = this.first();
-        if ($holder.length === 0) { return; }
+        if (!$holder.length) { return; }
         var info = renderer.layoutInfoFromHolder($holder);
         if (!!(info && info.editable)) {
-          var bCodeview = info.editor.hasClass('codeview');
-          if (bCodeview && agent.bCodeMirror) {
+          var isCodeview = info.editor.hasClass('codeview');
+          if (isCodeview && agent.hasCodeMirror) {
             info.codable.data('cmEditor').save();
           }
-          return bCodeview ? info.codable.val() : info.editable.html();
+          return isCodeview ? info.codable.val() : info.editable.html();
         }
-        return $holder.html();
+        return dom.isTextarea($holder[0]) ? $holder.val() : $holder.html();
       }
 
       // set the HTML contents of note
@@ -100,8 +100,11 @@ define([
 
         var info = renderer.layoutInfoFromHolder($holder);
         if (!info || !info.editable) { return; }
-        eventHandler.dettach(info);
-        renderer.removeLayout($holder);
+
+        var options = info.editor.data('options');
+
+        eventHandler.dettach(info, options);
+        renderer.removeLayout($holder, info, options);
       });
 
       return this;

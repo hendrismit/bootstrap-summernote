@@ -5,9 +5,10 @@
         bold: '굵게',
         italic: '기울임꼴',
         underline: '밑줄',
-        strike: '취소선',
+        strikethrough: '취소선',
         clear: '글자 효과 없애기',
         height: '줄간격',
+        name: '글꼴',
         size: '글자 크기'
       },
       image: {
@@ -38,7 +39,7 @@
         videoLink: '동영상 링크',
         insert: '동영상 추가',
         url: '동영상 URL',
-        providers: '(YouTube, Vimeo, Vine, Instagram, DailyMotion 사용 가능)'
+        providers: '(YouTube, Vimeo, Vine, Instagram, DailyMotion, Youku 사용 가능)'
       },
       table: {
         table: '테이블'

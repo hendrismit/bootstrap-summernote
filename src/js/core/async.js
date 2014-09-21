@@ -1,4 +1,4 @@
-define('core/async', function () {
+define('summernote/core/async', function () {
   /**
    * Async functions which returns `Promise`
    */
@@ -29,7 +29,7 @@ define('core/async', function () {
      * @param {String} sUrl
      * @return {Promise} - then: $image
      */
-    var createImage = function (sUrl) {
+    var createImage = function (sUrl, filename) {
       return $.Deferred(function (deferred) {
         $('<img>').one('load', function () {
           deferred.resolve($(this));
@@ -37,7 +37,9 @@ define('core/async', function () {
           deferred.reject($(this));
         }).css({
           display: 'none'
-        }).appendTo(document.body).attr('src', sUrl);
+        }).appendTo(document.body)
+          .attr('src', sUrl)
+          .attr('data-filename', filename);
       }).promise();
     };
 
