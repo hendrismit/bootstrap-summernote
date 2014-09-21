@@ -7,13 +7,14 @@
     "extra": {
         "component": {
             "scripts": [
-                "summernote.js"
+                "dist/summernote.js"
             ],
             "styles": [
                 "dist/summernote.css"
             ],
             "files": [
-                "dist/summernote.min.js"
+                "dist/summernote.min.js",
+                "lang/summernote-*.js"
             ]
         }
     }
