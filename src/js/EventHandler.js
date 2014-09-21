@@ -42,7 +42,7 @@ define([
       // else insert Image as dataURL
       } else {
         $.each(files, function (idx, file) {
-          async.readFileAsDataURL(file).done(function (sDataURL) {
+          async.readFileAsDataURL(file).then(function (sDataURL) {
             editor.insertImage($editable, sDataURL);
           }).fail(function () {
             if (callbacks.onImageUploadError) {
@@ -51,85 +51,6 @@ define([
           });
         });
       }
-    };
-
-    /**
-     * keydown event handler
-     *
-     * @param {KeyEvent} event
-     */
-    var hKeydown = function (event) {
-      var bCmd = agent.bMac ? event.metaKey : event.ctrlKey,
-          bShift = event.shiftKey, keyCode = event.keyCode;
-
-      // optimize
-      var bExecCmd = (bCmd || bShift || keyCode === key.TAB);
-      var oLayoutInfo = (bExecCmd) ? makeLayoutInfo(event.target) : null;
-
-      if (keyCode === key.TAB) {
-        var nTabsize = oLayoutInfo.editor().data('options').tabsize;
-        editor.tab(oLayoutInfo.editable(), nTabsize, bShift);
-      } else if (bCmd && ((bShift && keyCode === key.Z) || keyCode === key.Y)) {
-        editor.redo(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.Z) {
-        editor.undo(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.B) {
-        editor.bold(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.I) {
-        editor.italic(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.U) {
-        editor.underline(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.S) {
-        editor.strikethrough(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.BACKSLACH) {
-        editor.removeFormat(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.K) {
-        editor.setLinkDialog(oLayoutInfo.editable(), function (linkInfo, cb) {
-          dialog.showLinkDialog(oLayoutInfo.editable(), oLayoutInfo.dialog(), linkInfo, cb);
-        });
-      } else if (bCmd && keyCode === key.SLASH) {
-        dialog.showHelpDialog(oLayoutInfo.editable(), oLayoutInfo.dialog());
-      } else if (bCmd && bShift && keyCode === key.L) {
-        editor.justifyLeft(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.E) {
-        editor.justifyCenter(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.R) {
-        editor.justifyRight(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.J) {
-        editor.justifyFull(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.NUM7) {
-        editor.insertUnorderedList(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.NUM8) {
-        editor.insertOrderedList(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.LEFTBRACKET) {
-        editor.outdent(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.RIGHTBRACKET) {
-        editor.indent(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.NUM0) { // formatBlock Paragraph
-        editor.formatBlock(oLayoutInfo.editable(), 'P');
-      } else if (bCmd && (key.NUM1 <= keyCode && keyCode <= key.NUM6)) {
-        var sHeading = 'H' + String.fromCharCode(keyCode); // H1~H6
-        editor.formatBlock(oLayoutInfo.editable(), sHeading);
-      } else if (bCmd && keyCode === key.ENTER) {
-        editor.insertHorizontalRule(oLayoutInfo.editable());
-      } else {
-        if (keyCode === key.BACKSPACE || keyCode === key.ENTER ||
-            keyCode === key.SPACE) {
-          editor.recordUndo(makeLayoutInfo(event.target).editable());
-        }
-        return; // not matched
-      }
-      event.preventDefault(); //prevent default event for FF
-    };
-
-    var hDropImage = function (event) {
-      var dataTransfer = event.originalEvent.dataTransfer;
-      if (dataTransfer && dataTransfer.files) {
-        var oLayoutInfo = makeLayoutInfo(event.currentTarget || event.target);
-        oLayoutInfo.editable().focus();
-        insertImages(oLayoutInfo.editable(), dataTransfer.files);
-      }
-      event.preventDefault();
     };
 
     var hMousedown = function (event) {
@@ -236,62 +157,69 @@ define([
           toolbar.updateRecentColor($btn[0], sEvent, sValue);
         } else if (sEvent === 'showLinkDialog') { // popover to dialog
           $editable.focus();
-          editor.setLinkDialog($editable, function (linkInfo, cb) {
-            dialog.showLinkDialog($editable, $dialog, linkInfo, cb);
+          var linkInfo = editor.getLinkInfo();
+
+          editor.saveRange($editable);
+          dialog.showLinkDialog($editable, $dialog, linkInfo).then(function (sLinkUrl, bNewWindow) {
+            editor.restoreRange($editable);
+            editor.createLink($editable, sLinkUrl, bNewWindow);
           });
         } else if (sEvent === 'showImageDialog') {
           $editable.focus();
-          dialog.showImageDialog($editable, $dialog, function (files) {
-            insertImages($editable, files);
-          }, function (sUrl) {
-            editor.restoreRange($editable);
-            editor.insertImage($editable, sUrl);
+
+          dialog.showImageDialog($editable, $dialog).then(function (data) {
+            if (typeof data === 'string') {
+              editor.restoreRange($editable);
+              editor.insertImage($editable, data);
+            } else {
+              insertImages($editable, data);
+            }
           });
         } else if (sEvent === 'showVideoDialog') {
           $editable.focus();
-          editor.setVideoDialog($editable, function (linkInfo, cb) {
-            dialog.showVideoDialog($editable, $dialog, linkInfo, cb);
+          var videoInfo = editor.getVideoInfo();
+
+          editor.saveRange($editable);
+          dialog.showVideoDialog($editable, $dialog, videoInfo).then(function (sUrl) {
+            editor.restoreRange($editable);
+            editor.insertVideo($editable, sUrl);
           });
         } else if (sEvent === 'showHelpDialog') {
           dialog.showHelpDialog($editable, $dialog);
         } else if (sEvent === 'fullscreen') {
-          $editor.toggleClass('fullscreen');
+          var $scrollbar = $('html, body');
 
-          var hResizeFullscreen = function () {
-            var nWidth = $(window).width();
-            $editor.css('width', nWidth);
-            var nHeight = $(window).height() - $toolbar.outerHeight();
-            $editable.css('height', nHeight);
-            $codable.css('height', nHeight);
-            var cmEditor = $codable.data('cmEditor');
-            if (cmEditor) {
-              cmEditor.setSize(null, nHeight);
+          var resize = function (size) {
+            $editor.css('width', size.w);
+            $editable.css('height', size.h);
+            $codable.css('height', size.h);
+            if ($codable.data('cmEditor')) {
+              $codable.data('cmEditor').setSize(null, size.h);
             }
           };
 
-          var $scrollbar = $('html, body');
-          var bFullscreen = $editor.hasClass('fullscreen');
-          if (bFullscreen) {
-            $editor.data('orgWidth', $editor.width());
+          $editor.toggleClass('fullscreen');
+          var isFullscreen = $editor.hasClass('fullscreen');
+          if (isFullscreen) {
             $editable.data('orgHeight', $editable.css('height'));
-            $(window).on('resize', hResizeFullscreen).trigger('resize');
+
+            $(window).on('resize', function () {
+              resize({
+                w: $(window).width(),
+                h: $(window).height() - $toolbar.outerHeight()
+              });
+            }).trigger('resize');
+
             $scrollbar.css('overflow', 'hidden');
           } else {
-            var orgWidth = $editor.data('orgWidth');
-            var newWidth = orgWidth === $(window).width() ? 'auto' : orgWidth;
-            $editor.css('width', newWidth);
-            var newHeight = $editable.data('orgHeight');
-            $editable.css('height', newHeight);
-            $codable.css('height', newHeight);
-            cmEditor = $codable.data('cmEditor');
-            if (cmEditor) {
-              cmEditor.setSize(null, newHeight);
-            }
-            $scrollbar.css('overflow', 'auto');
             $(window).off('resize');
+            resize({
+              w: options.width || '',
+              h: $editable.data('orgHeight')
+            });
+            $scrollbar.css('overflow', 'auto');
           }
-
-          toolbar.updateFullscreen($toolbar, bFullscreen);
+          toolbar.updateFullscreen($toolbar, isFullscreen);
         } else if (sEvent === 'codeview') {
           $editor.toggleClass('codeview');
 
@@ -381,13 +309,18 @@ define([
       var $unhighlighted = $picker.find('.note-dimension-picker-unhighlighted');
 
       var posOffset;
+      // HTML5 with jQuery - e.offsetX is undefined in Firefox
       if (event.offsetX === undefined) {
-        // HTML5 with jQuery - e.offsetX is undefined in Firefox
         var posCatcher = $(event.target).offset();
-        posOffset = {x: event.pageX - posCatcher.left,
-                     y: event.pageY - posCatcher.top};
+        posOffset = {
+          x: event.pageX - posCatcher.left,
+          y: event.pageY - posCatcher.top
+        };
       } else {
-        posOffset = {x: event.offsetX, y: event.offsetY};
+        posOffset = {
+          x: event.offsetX,
+          y: event.offsetY
+        };
       }
 
       var dim = {
@@ -448,9 +381,49 @@ define([
       });
 
       // attach dropImage
-      $dropzone.on('drop', function (e) {
-        hDropImage(e);
+      $dropzone.on('drop', function (event) {
+        var dataTransfer = event.originalEvent.dataTransfer;
+        if (dataTransfer && dataTransfer.files) {
+          var oLayoutInfo = makeLayoutInfo(event.currentTarget || event.target);
+          oLayoutInfo.editable().focus();
+          insertImages(oLayoutInfo.editable(), dataTransfer.files);
+        }
+        event.preventDefault();
       }).on('dragover', false); // prevent default dragover event
+    };
+
+
+    /**
+     * bind KeyMap on keydown
+     *
+     * @param {Object} oLayoutInfo
+     * @param {Object} keyMap
+     */
+    this.bindKeyMap = function (oLayoutInfo, keyMap) {
+      var $editor = oLayoutInfo.editor;
+      var $editable = oLayoutInfo.editable;
+
+      $editable.on('keydown', function (event) {
+        var aKey = [];
+
+        // modifier
+        if (event.metaKey) { aKey.push('CMD'); }
+        if (event.ctrlKey) { aKey.push('CTRL'); }
+        if (event.shiftKey) { aKey.push('SHIFT'); }
+
+        // keycode
+        var keyName = key.nameFromCode[event.keyCode];
+        if (keyName) { aKey.push(keyName); }
+
+        var handler = keyMap[aKey.join('+')];
+        if (handler) {
+          event.preventDefault();
+
+          editor[handler]($editable, $editor.data('options'));
+        } else if (key.isEdit(event.keyCode)) {
+          editor.recordUndo($editable);
+        }
+      });
     };
 
     /**
@@ -461,7 +434,9 @@ define([
      * @param {Function} options.enter - enter key handler
      */
     this.attach = function (oLayoutInfo, options) {
-      oLayoutInfo.editable.on('keydown', hKeydown);
+      var keyMap = options.keyMap[agent.bMac ? 'mac' : 'pc'];
+      this.bindKeyMap(oLayoutInfo, keyMap);
+
       oLayoutInfo.editable.on('mousedown', hMousedown);
       oLayoutInfo.editable.on('keyup mouseup', hToolbarAndPopoverUpdate);
       oLayoutInfo.editable.on('scroll', hScroll);
@@ -514,6 +489,7 @@ define([
       if (options.onblur) { oLayoutInfo.editable.blur(options.onblur); }
       if (options.onkeyup) { oLayoutInfo.editable.keyup(options.onkeyup); }
       if (options.onkeydown) { oLayoutInfo.editable.keydown(options.onkeydown); }
+      if (options.onpaste) { oLayoutInfo.editable.on('paste', options.onpaste); }
       if (options.onToolbarClick) { oLayoutInfo.toolbar.click(options.onToolbarClick); }
 
       // callbacks for advanced features (camel)
@@ -522,10 +498,8 @@ define([
       oLayoutInfo.editable.data('callbacks', {
         onChange: options.onChange,
         onAutoSave: options.onAutoSave,
-        onPasteBefore: options.onPasteBefore,
-        onPasteAfter: options.onPasteAfter,
         onImageUpload: options.onImageUpload,
-        onImageUploadError: options.onImageUpload,
+        onImageUploadError: options.onImageUploadError,
         onFileUpload: options.onFileUpload,
         onFileUploadError: options.onFileUpload
       });

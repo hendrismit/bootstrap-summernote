@@ -101,12 +101,22 @@ define([
      * @param {Number} nTabsize
      * @param {Boolean} bShift
      */
-    this.tab = function ($editable, nTabsize, bShift) {
+    this.tab = function ($editable, options) {
       var rng = range.create();
       if (rng.isCollapsed() && rng.isOnCell()) {
-        table.tab(rng, bShift);
+        table.tab(rng);
       } else {
-        insertTab($editable, rng, nTabsize);
+        insertTab($editable, rng, options.tabsize);
+      }
+    };
+
+    /**
+     * handle shift+tab key
+     */
+    this.untab = function () {
+      var rng = range.create();
+      if (rng.isCollapsed() && rng.isOnCell()) {
+        table.tab(rng, true);
       }
     };
 
@@ -117,10 +127,12 @@ define([
      * @param {String} sUrl
      */
     this.insertImage = function ($editable, sUrl) {
-      async.loadImage(sUrl).done(function (image) {
+      async.createImage(sUrl).then(function ($image) {
         recordUndo($editable);
-        var $image = $('<img>').attr('src', sUrl);
-        $image.css('width', Math.min($editable.width(), image.width));
+        $image.css({
+          display: '',
+          width: Math.min($editable.width(), $image.width())
+        });
         range.create().insertNode($image[0]);
       }).fail(function () {
         var callbacks = $editable.data('callbacks');
@@ -200,6 +212,20 @@ define([
       sTagName = agent.bMSIE ? '<' + sTagName + '>' : sTagName;
       document.execCommand('FormatBlock', false, sTagName);
     };
+
+    this.formatPara = function ($editable) {
+      this.formatBlock($editable, 'P');
+    };
+
+    /* jshint ignore:start */
+    for (var idx = 1; idx <= 6; idx ++) {
+      this['formatH' + idx] = function (idx) {
+        return function ($editable) {
+          this.formatBlock($editable, 'H' + idx);
+        };
+      }(idx);
+    };
+    /* jshint ignore:end */
 
     /**
      * fontsize
@@ -288,40 +314,36 @@ define([
     };
 
     /**
-     * set linkInfo before link dialog opened.
-     * @param {jQuery} $editable
-     * @param {Function} fnShowDialog
+     * get link info
+     *
+     * @return {Promise}
      */
-    this.setLinkDialog = function ($editable, fnShowDialog) {
-      var rng = range.create(),
-          bNewWindow = true;
+    this.getLinkInfo = function () {
+      var rng = range.create();
+      var bNewWindow = true;
+      var sUrl = '';
 
-      // If range on anchor (Edit).
+      // If range on anchor expand range on anchor(for edit link).
       if (rng.isOnAnchor()) {
-        // expand range on anchor.
         var elAnchor = dom.ancestor(rng.sc, dom.isAnchor);
         rng = range.createFromNode(elAnchor);
         bNewWindow = $(elAnchor).attr('target') === '_blank';
+        sUrl = elAnchor.href;
       }
 
-      var self = this;
-      fnShowDialog({
+      return {
         text: rng.toString(),
-        url: rng.isOnAnchor() ? dom.ancestor(rng.sc, dom.isAnchor).href : '',
+        url: sUrl,
         newWindow: bNewWindow
-      }, function (sLinkUrl, bNewWindow) {
-        // restore range
-        rng.select();
-        self.createLink($editable, sLinkUrl, bNewWindow);
-      });
+      };
     };
 
     /**
-     * set videoInfo before video dialog opend.
-     * @param {jQuery} $editable
-     * @param {Function} fnShowDialog
+     * get video info
+     *
+     * @return {Object}
      */
-    this.setVideoDialog = function ($editable, fnShowDialog) {
+    this.getVideoInfo = function () {
       var rng = range.create();
 
       if (rng.isOnAnchor()) {
@@ -329,13 +351,9 @@ define([
         rng = range.createFromNode(elAnchor);
       }
 
-      var self = this;
-      fnShowDialog({
+      return {
         text: rng.toString()
-      }, function (sLinkUrl) {
-        rng.select();
-        self.insertVideo($editable, sLinkUrl);
-      });
+      };
     };
 
     this.color = function ($editable, sObjColor) {

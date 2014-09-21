@@ -6,7 +6,7 @@
  * Copyright 2013 Alan Hong. and outher contributors
  * summernote may be freely distributed under the MIT license./
  *
- * Date: 2014-02-23T06:42Z
+ * Date: 2014-03-16T06:23Z
  */
 (function (factory) {
   /* global define */
@@ -653,7 +653,65 @@
       onkeydown: null,          // keydown
       onImageUpload: null,      // imageUploadHandler
       onImageUploadError: null, // imageUploadErrorHandler
-      onToolbarClick: null
+      onToolbarClick: null,
+
+      keyMap: {
+        pc: {
+          'CTRL+Z': 'undo',
+          'CTRL+Y': 'redo',
+          'TAB': 'tab',
+          'SHIFT+TAB': 'untab',
+          'CTRL+B': 'bold',
+          'CTRL+I': 'italic',
+          'CTRL+U': 'underline',
+          'CTRL+SHIFT+S': 'strikethrough',
+          'CTRL+BACKSLASH': 'removeFormat',
+          'CTRL+SHIFT+L': 'justifyLeft',
+          'CTRL+SHIFT+E': 'justifyCenter',
+          'CTRL+SHIFT+R': 'justifyRight',
+          'CTRL+SHIFT+J': 'justifyFull',
+          'CTRL+SHIFT+NUM7': 'insertUnorderedList',
+          'CTRL+SHIFT+NUM8': 'insertOrderedList',
+          'CTRL+LEFTBRACKET': 'outdent',
+          'CTRL+RIGHTBRACKET': 'indent',
+          'CTRL+NUM0': 'formatPara',
+          'CTRL+NUM1': 'formatH1',
+          'CTRL+NUM2': 'formatH2',
+          'CTRL+NUM3': 'formatH3',
+          'CTRL+NUM4': 'formatH4',
+          'CTRL+NUM5': 'formatH5',
+          'CTRL+NUM6': 'formatH6',
+          'CTRL+ENTER': 'insertHorizontalRule'
+        },
+
+        mac: {
+          'CMD+Z': 'undo',
+          'CMD+SHIFT+Z': 'redo',
+          'TAB': 'tab',
+          'SHIFT+TAB': 'untab',
+          'CMD+B': 'bold',
+          'CMD+I': 'italic',
+          'CMD+U': 'underline',
+          'CMD+SHIFT+S': 'strikethrough',
+          'CMD+BACKSLASH': 'removeFormat',
+          'CMD+SHIFT+L': 'justifyLeft',
+          'CMD+SHIFT+E': 'justifyCenter',
+          'CMD+SHIFT+R': 'justifyRight',
+          'CMD+SHIFT+J': 'justifyFull',
+          'CMD+SHIFT+NUM7': 'insertUnorderedList',
+          'CMD+SHIFT+NUM8': 'insertOrderedList',
+          'CMD+LEFTBRACKET': 'outdent',
+          'CMD+RIGHTBRACKET': 'indent',
+          'CMD+NUM0': 'formatPara',
+          'CMD+NUM1': 'formatH1',
+          'CMD+NUM2': 'formatH2',
+          'CMD+NUM3': 'formatH3',
+          'CMD+NUM4': 'formatH4',
+          'CMD+NUM5': 'formatH5',
+          'CMD+NUM6': 'formatH6',
+          'CMD+ENTER': 'insertHorizontalRule'
+        }
+      }
     },
 
     // default language: en-US
@@ -769,7 +827,7 @@
      * read contents of file as representing URL
      *
      * @param {File} file
-     * @return {Promise}
+     * @return {Promise} - then: sDataUrl
      */
     var readFileAsDataURL = function (file) {
       return $.Deferred(function (deferred) {
@@ -786,39 +844,26 @@
     };
   
     /**
-     * load image from url string
+     * create `<image>` from url string
      *
      * @param {String} sUrl
-     * @param {Promise}
+     * @return {Promise} - then: $image
      */
-    var loadImage = function (sUrl) {
+    var createImage = function (sUrl) {
       return $.Deferred(function (deferred) {
-        $.extend(new Image(), {
-          detachEvents: function () {
-            this.onload = null;
-            this.onerror = null;
-            this.onabort = null;
-          },
-          onload: function () {
-            this.detachEvents();
-            deferred.resolve(this);
-          },
-          onerror: function () {
-            // URL returns 404, etc
-            this.detachEvents();
-            deferred.reject(this);
-          },
-          onabort: function () {
-            // IE may call this if user clicks "Stop"
-            this.detachEvents();
-            deferred.reject(this);
-          }
-        }).src = sUrl;
+        $('<img>').one('load', function () {
+          deferred.resolve($(this));
+        }).one('error abort', function () {
+          deferred.reject($(this));
+        }).css({
+          display: 'none'
+        }).appendTo(document.body).attr('src', sUrl);
       }).promise();
     };
+
     return {
       readFileAsDataURL: readFileAsDataURL,
-      loadImage: loadImage
+      createImage: createImage
     };
   })();
 
@@ -826,35 +871,44 @@
    * Object for keycodes.
    */
   var key = {
-    BACKSPACE: 8,
-    TAB: 9,
-    ENTER: 13,
-    SPACE: 32,
+    isEdit: function (keyCode) {
+      return [8, 9, 13, 32].indexOf(keyCode) !== -1;
+    },
+    nameFromCode: {
+      '8': 'BACKSPACE',
+      '9': 'TAB',
+      '13': 'ENTER',
+      '32': 'SPACE',
 
-    // Number: 0-9
-    NUM0: 48,
-    NUM1: 49,
-    NUM6: 54,
-    NUM7: 55,
-    NUM8: 56,
+      // Number: 0-9
+      '48': 'NUM0',
+      '49': 'NUM1',
+      '50': 'NUM2',
+      '51': 'NUM3',
+      '52': 'NUM4',
+      '53': 'NUM5',
+      '54': 'NUM6',
+      '55': 'NUM7',
+      '56': 'NUM8',
 
-    // Alphabet: a-z
-    B: 66,
-    E: 69,
-    I: 73,
-    J: 74,
-    K: 75,
-    L: 76,
-    R: 82,
-    S: 83,
-    U: 85,
-    Y: 89,
-    Z: 90,
+      // Alphabet: a-z
+      '66': 'B',
+      '69': 'E',
+      '73': 'I',
+      '74': 'J',
+      '75': 'K',
+      '76': 'L',
+      '82': 'R',
+      '83': 'S',
+      '85': 'U',
+      '89': 'Y',
+      '90': 'Z',
 
-    SLASH: 191,
-    LEFTBRACKET: 219,
-    BACKSLACH: 220,
-    RIGHTBRACKET: 221
+      '191': 'SLASH',
+      '219': 'LEFTBRACKET',
+      '220': 'BACKSLASH',
+      '221': 'RIGHTBRACKET'
+    }
   };
 
   /**
@@ -1358,12 +1412,22 @@
      * @param {Number} nTabsize
      * @param {Boolean} bShift
      */
-    this.tab = function ($editable, nTabsize, bShift) {
+    this.tab = function ($editable, options) {
       var rng = range.create();
       if (rng.isCollapsed() && rng.isOnCell()) {
-        table.tab(rng, bShift);
+        table.tab(rng);
       } else {
-        insertTab($editable, rng, nTabsize);
+        insertTab($editable, rng, options.tabsize);
+      }
+    };
+
+    /**
+     * handle shift+tab key
+     */
+    this.untab = function () {
+      var rng = range.create();
+      if (rng.isCollapsed() && rng.isOnCell()) {
+        table.tab(rng, true);
       }
     };
 
@@ -1374,10 +1438,12 @@
      * @param {String} sUrl
      */
     this.insertImage = function ($editable, sUrl) {
-      async.loadImage(sUrl).done(function (image) {
+      async.createImage(sUrl).then(function ($image) {
         recordUndo($editable);
-        var $image = $('<img>').attr('src', sUrl);
-        $image.css('width', Math.min($editable.width(), image.width));
+        $image.css({
+          display: '',
+          width: Math.min($editable.width(), $image.width())
+        });
         range.create().insertNode($image[0]);
       }).fail(function () {
         var callbacks = $editable.data('callbacks');
@@ -1457,6 +1523,20 @@
       sTagName = agent.bMSIE ? '<' + sTagName + '>' : sTagName;
       document.execCommand('FormatBlock', false, sTagName);
     };
+
+    this.formatPara = function ($editable) {
+      this.formatBlock($editable, 'P');
+    };
+
+    /* jshint ignore:start */
+    for (var idx = 1; idx <= 6; idx ++) {
+      this['formatH' + idx] = function (idx) {
+        return function ($editable) {
+          this.formatBlock($editable, 'H' + idx);
+        };
+      }(idx);
+    };
+    /* jshint ignore:end */
 
     /**
      * fontsize
@@ -1545,40 +1625,36 @@
     };
 
     /**
-     * set linkInfo before link dialog opened.
-     * @param {jQuery} $editable
-     * @param {Function} fnShowDialog
+     * get link info
+     *
+     * @return {Promise}
      */
-    this.setLinkDialog = function ($editable, fnShowDialog) {
-      var rng = range.create(),
-          bNewWindow = true;
+    this.getLinkInfo = function () {
+      var rng = range.create();
+      var bNewWindow = true;
+      var sUrl = '';
 
-      // If range on anchor (Edit).
+      // If range on anchor expand range on anchor(for edit link).
       if (rng.isOnAnchor()) {
-        // expand range on anchor.
         var elAnchor = dom.ancestor(rng.sc, dom.isAnchor);
         rng = range.createFromNode(elAnchor);
         bNewWindow = $(elAnchor).attr('target') === '_blank';
+        sUrl = elAnchor.href;
       }
 
-      var self = this;
-      fnShowDialog({
+      return {
         text: rng.toString(),
-        url: rng.isOnAnchor() ? dom.ancestor(rng.sc, dom.isAnchor).href : '',
+        url: sUrl,
         newWindow: bNewWindow
-      }, function (sLinkUrl, bNewWindow) {
-        // restore range
-        rng.select();
-        self.createLink($editable, sLinkUrl, bNewWindow);
-      });
+      };
     };
 
     /**
-     * set videoInfo before video dialog opend.
-     * @param {jQuery} $editable
-     * @param {Function} fnShowDialog
+     * get video info
+     *
+     * @return {Object}
      */
-    this.setVideoDialog = function ($editable, fnShowDialog) {
+    this.getVideoInfo = function () {
       var rng = range.create();
 
       if (rng.isOnAnchor()) {
@@ -1586,13 +1662,9 @@
         rng = range.createFromNode(elAnchor);
       }
 
-      var self = this;
-      fnShowDialog({
+      return {
         text: rng.toString()
-      }, function (sLinkUrl) {
-        rng.select();
-        self.insertVideo($editable, sLinkUrl);
-      });
+      };
     };
 
     this.color = function ($editable, sObjColor) {
@@ -1945,52 +2017,55 @@
      * @param {Boolean} bEnable
      */
     var toggleBtn = function ($btn, bEnable) {
-      if (bEnable) {
-        $btn.removeClass('disabled').attr('disabled', false);
-      } else {
-        $btn.addClass('disabled').attr('disabled', true);
-      }
+      $btn.toggleClass('disabled', !bEnable);
+      $btn.attr('disabled', !bEnable);
     };
 
     /**
      * show image dialog
      *
+     * @param {jQuery} $editable
      * @param {jQuery} $dialog
-     * @param {Function} fnInsertImages 
-     * @param {Function} fnInsertImage 
+     * @return {Promise}
      */
-    this.showImageDialog = function ($editable, $dialog, fnInsertImages, fnInsertImage) {
-      var $imageDialog = $dialog.find('.note-image-dialog');
+    this.showImageDialog = function ($editable, $dialog) {
+      return $.Deferred(function (deferred) {
+        var $imageDialog = $dialog.find('.note-image-dialog');
 
-      var $imageInput = $dialog.find('.note-image-input'),
-          $imageUrl = $dialog.find('.note-image-url'),
-          $imageBtn = $dialog.find('.note-image-btn');
+        var $imageInput = $dialog.find('.note-image-input'),
+            $imageUrl = $dialog.find('.note-image-url'),
+            $imageBtn = $dialog.find('.note-image-btn');
 
-      $imageDialog.one('shown.bs.modal', function (event) {
-        event.stopPropagation();
+        $imageDialog.one('shown.bs.modal', function (event) {
+          event.stopPropagation();
 
-        $imageInput.on('change', function () {
-          fnInsertImages(this.files);
-          $(this).val('');
-          $imageDialog.modal('hide');
-        });
+          // Cloning imageInput to clear element.
+          $imageInput.replaceWith($imageInput.clone()
+            .on('change', function () {
+              $imageDialog.modal('hide');
+              deferred.resolve(this.files);
+            })
+          );
 
-        $imageBtn.click(function (event) {
-          $imageDialog.modal('hide');
-          fnInsertImage($imageUrl.val());
-          event.preventDefault();
-        });
+          $imageBtn.click(function (event) {
+            event.preventDefault();
 
-        $imageUrl.keyup(function () {
-          toggleBtn($imageBtn, $imageUrl.val());
-        }).val('').focus();
-      }).one('hidden.bs.modal', function (event) {
-        event.stopPropagation();
-        $editable.focus();
-        $imageInput.off('change');
-        $imageUrl.off('keyup');
-        $imageBtn.off('click');
-      }).modal('show');
+            $imageDialog.modal('hide');
+            deferred.resolve($imageUrl.val());
+          });
+
+          $imageUrl.keyup(function () {
+            toggleBtn($imageBtn, $imageUrl.val());
+          }).val('').focus();
+        }).one('hidden.bs.modal', function (event) {
+          event.stopPropagation();
+
+          $editable.focus();
+          $imageInput.off('change');
+          $imageUrl.off('keyup');
+          $imageBtn.off('click');
+        }).modal('show');
+      });
     };
 
     /**
@@ -1998,31 +2073,35 @@
      *
      * @param {jQuery} $dialog 
      * @param {Object} videoInfo 
-     * @param {Function} callback 
+     * @return {Promise}
      */
-    this.showVideoDialog = function ($editable, $dialog, videoInfo, callback) {
-      var $videoDialog = $dialog.find('.note-video-dialog');
-      var $videoUrl = $videoDialog.find('.note-video-url'),
-          $videoBtn = $videoDialog.find('.note-video-btn');
+    this.showVideoDialog = function ($editable, $dialog, videoInfo) {
+      return $.Deferred(function (deferred) {
+        var $videoDialog = $dialog.find('.note-video-dialog');
+        var $videoUrl = $videoDialog.find('.note-video-url'),
+            $videoBtn = $videoDialog.find('.note-video-btn');
 
-      $videoDialog.one('shown.bs.modal', function (event) {
-        event.stopPropagation();
+        $videoDialog.one('shown.bs.modal', function (event) {
+          event.stopPropagation();
 
-        $videoUrl.val(videoInfo.text).keyup(function () {
-          toggleBtn($videoBtn, $videoUrl.val());
-        }).trigger('keyup').trigger('focus');
+          $videoUrl.val(videoInfo.text).keyup(function () {
+            toggleBtn($videoBtn, $videoUrl.val());
+          }).trigger('keyup').trigger('focus');
 
-        $videoBtn.click(function (event) {
-          $videoDialog.modal('hide');
-          callback($videoUrl.val());
-          event.preventDefault();
-        });
-      }).one('hidden.bs.modal', function (event) {
-        event.stopPropagation();
-        $editable.focus();
-        $videoUrl.off('keyup');
-        $videoBtn.off('click');
-      }).modal('show');
+          $videoBtn.click(function (event) {
+            event.preventDefault();
+
+            $videoDialog.modal('hide');
+            deferred.resolve($videoUrl.val());
+          });
+        }).one('hidden.bs.modal', function (event) {
+          event.stopPropagation();
+
+          $editable.focus();
+          $videoUrl.off('keyup');
+          $videoBtn.off('click');
+        }).modal('show');
+      });
     };
 
     /**
@@ -2030,45 +2109,46 @@
      *
      * @param {jQuery} $dialog
      * @param {Object} linkInfo
-     * @param {function} callback
+     * @return {Promise}
      */
-    this.showLinkDialog = function ($editable, $dialog, linkInfo, callback) {
-      var $linkDialog = $dialog.find('.note-link-dialog');
+    this.showLinkDialog = function ($editable, $dialog, linkInfo) {
+      return $.Deferred(function (deferred) {
+        var $linkDialog = $dialog.find('.note-link-dialog');
 
-      var $linkText = $linkDialog.find('.note-link-text'),
-          $linkUrl = $linkDialog.find('.note-link-url'),
-          $linkBtn = $linkDialog.find('.note-link-btn'),
-          $openInNewWindow = $linkDialog.find('input[type=checkbox]');
+        var $linkText = $linkDialog.find('.note-link-text'),
+        $linkUrl = $linkDialog.find('.note-link-url'),
+        $linkBtn = $linkDialog.find('.note-link-btn'),
+        $openInNewWindow = $linkDialog.find('input[type=checkbox]');
 
-      $linkDialog.one('shown.bs.modal', function (event) {
-        event.stopPropagation();
+        $linkDialog.one('shown.bs.modal', function (event) {
+          event.stopPropagation();
 
-        $linkText.val(linkInfo.text);
+          $linkText.val(linkInfo.text);
 
-        $linkUrl.val(linkInfo.url).keyup(function () {
-          toggleBtn($linkBtn, $linkUrl.val());
+          $linkUrl.keyup(function () {
+            toggleBtn($linkBtn, $linkUrl.val());
+            // display same link on `Text to display` input
+            // when create a new link
+            if (!linkInfo.text) {
+              $linkText.val($linkUrl.val());
+            }
+          }).val(linkInfo.url).trigger('focus');
 
-          // If create a new link, display same link on `Text to display` input.
-          if (!linkInfo.text) {
-            $linkText.val($linkUrl.val());
-          }
-        }).trigger('focus');
+          $openInNewWindow.prop('checked', linkInfo.newWindow);
 
-        $openInNewWindow.prop('checked', linkInfo.newWindow);
+          $linkBtn.one('click', function (event) {
+            event.preventDefault();
 
-        $linkBtn.click(function (event) {
-          $linkDialog.modal('hide');
-          callback($linkUrl.val(), $openInNewWindow.is(':checked'));
+            $linkDialog.modal('hide');
+            deferred.resolve($linkUrl.val(), $openInNewWindow.is(':checked'));
+          });
+        }).one('hidden.bs.modal', function (event) {
+          event.stopPropagation();
 
-          event.preventDefault();
-        });
-      }).one('hidden.bs.modal', function (event) {
-        event.stopPropagation();
-
-        $editable.focus();
-        $linkUrl.off('keyup');
-        $linkBtn.off('click');
-      }).modal('show');
+          $editable.focus();
+          $linkUrl.off('keyup');
+        }).modal('show');
+      }).promise();
     };
 
     /**
@@ -2121,7 +2201,7 @@
       // else insert Image as dataURL
       } else {
         $.each(files, function (idx, file) {
-          async.readFileAsDataURL(file).done(function (sDataURL) {
+          async.readFileAsDataURL(file).then(function (sDataURL) {
             editor.insertImage($editable, sDataURL);
           }).fail(function () {
             if (callbacks.onImageUploadError) {
@@ -2130,85 +2210,6 @@
           });
         });
       }
-    };
-
-    /**
-     * keydown event handler
-     *
-     * @param {KeyEvent} event
-     */
-    var hKeydown = function (event) {
-      var bCmd = agent.bMac ? event.metaKey : event.ctrlKey,
-          bShift = event.shiftKey, keyCode = event.keyCode;
-
-      // optimize
-      var bExecCmd = (bCmd || bShift || keyCode === key.TAB);
-      var oLayoutInfo = (bExecCmd) ? makeLayoutInfo(event.target) : null;
-
-      if (keyCode === key.TAB) {
-        var nTabsize = oLayoutInfo.editor().data('options').tabsize;
-        editor.tab(oLayoutInfo.editable(), nTabsize, bShift);
-      } else if (bCmd && ((bShift && keyCode === key.Z) || keyCode === key.Y)) {
-        editor.redo(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.Z) {
-        editor.undo(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.B) {
-        editor.bold(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.I) {
-        editor.italic(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.U) {
-        editor.underline(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.S) {
-        editor.strikethrough(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.BACKSLACH) {
-        editor.removeFormat(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.K) {
-        editor.setLinkDialog(oLayoutInfo.editable(), function (linkInfo, cb) {
-          dialog.showLinkDialog(oLayoutInfo.editable(), oLayoutInfo.dialog(), linkInfo, cb);
-        });
-      } else if (bCmd && keyCode === key.SLASH) {
-        dialog.showHelpDialog(oLayoutInfo.editable(), oLayoutInfo.dialog());
-      } else if (bCmd && bShift && keyCode === key.L) {
-        editor.justifyLeft(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.E) {
-        editor.justifyCenter(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.R) {
-        editor.justifyRight(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.J) {
-        editor.justifyFull(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.NUM7) {
-        editor.insertUnorderedList(oLayoutInfo.editable());
-      } else if (bCmd && bShift && keyCode === key.NUM8) {
-        editor.insertOrderedList(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.LEFTBRACKET) {
-        editor.outdent(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.RIGHTBRACKET) {
-        editor.indent(oLayoutInfo.editable());
-      } else if (bCmd && keyCode === key.NUM0) { // formatBlock Paragraph
-        editor.formatBlock(oLayoutInfo.editable(), 'P');
-      } else if (bCmd && (key.NUM1 <= keyCode && keyCode <= key.NUM6)) {
-        var sHeading = 'H' + String.fromCharCode(keyCode); // H1~H6
-        editor.formatBlock(oLayoutInfo.editable(), sHeading);
-      } else if (bCmd && keyCode === key.ENTER) {
-        editor.insertHorizontalRule(oLayoutInfo.editable());
-      } else {
-        if (keyCode === key.BACKSPACE || keyCode === key.ENTER ||
-            keyCode === key.SPACE) {
-          editor.recordUndo(makeLayoutInfo(event.target).editable());
-        }
-        return; // not matched
-      }
-      event.preventDefault(); //prevent default event for FF
-    };
-
-    var hDropImage = function (event) {
-      var dataTransfer = event.originalEvent.dataTransfer;
-      if (dataTransfer && dataTransfer.files) {
-        var oLayoutInfo = makeLayoutInfo(event.currentTarget || event.target);
-        oLayoutInfo.editable().focus();
-        insertImages(oLayoutInfo.editable(), dataTransfer.files);
-      }
-      event.preventDefault();
     };
 
     var hMousedown = function (event) {
@@ -2315,62 +2316,69 @@
           toolbar.updateRecentColor($btn[0], sEvent, sValue);
         } else if (sEvent === 'showLinkDialog') { // popover to dialog
           $editable.focus();
-          editor.setLinkDialog($editable, function (linkInfo, cb) {
-            dialog.showLinkDialog($editable, $dialog, linkInfo, cb);
+          var linkInfo = editor.getLinkInfo();
+
+          editor.saveRange($editable);
+          dialog.showLinkDialog($editable, $dialog, linkInfo).then(function (sLinkUrl, bNewWindow) {
+            editor.restoreRange($editable);
+            editor.createLink($editable, sLinkUrl, bNewWindow);
           });
         } else if (sEvent === 'showImageDialog') {
           $editable.focus();
-          dialog.showImageDialog($editable, $dialog, function (files) {
-            insertImages($editable, files);
-          }, function (sUrl) {
-            editor.restoreRange($editable);
-            editor.insertImage($editable, sUrl);
+
+          dialog.showImageDialog($editable, $dialog).then(function (data) {
+            if (typeof data === 'string') {
+              editor.restoreRange($editable);
+              editor.insertImage($editable, data);
+            } else {
+              insertImages($editable, data);
+            }
           });
         } else if (sEvent === 'showVideoDialog') {
           $editable.focus();
-          editor.setVideoDialog($editable, function (linkInfo, cb) {
-            dialog.showVideoDialog($editable, $dialog, linkInfo, cb);
+          var videoInfo = editor.getVideoInfo();
+
+          editor.saveRange($editable);
+          dialog.showVideoDialog($editable, $dialog, videoInfo).then(function (sUrl) {
+            editor.restoreRange($editable);
+            editor.insertVideo($editable, sUrl);
           });
         } else if (sEvent === 'showHelpDialog') {
           dialog.showHelpDialog($editable, $dialog);
         } else if (sEvent === 'fullscreen') {
-          $editor.toggleClass('fullscreen');
+          var $scrollbar = $('html, body');
 
-          var hResizeFullscreen = function () {
-            var nWidth = $(window).width();
-            $editor.css('width', nWidth);
-            var nHeight = $(window).height() - $toolbar.outerHeight();
-            $editable.css('height', nHeight);
-            $codable.css('height', nHeight);
-            var cmEditor = $codable.data('cmEditor');
-            if (cmEditor) {
-              cmEditor.setSize(null, nHeight);
+          var resize = function (size) {
+            $editor.css('width', size.w);
+            $editable.css('height', size.h);
+            $codable.css('height', size.h);
+            if ($codable.data('cmEditor')) {
+              $codable.data('cmEditor').setSize(null, size.h);
             }
           };
 
-          var $scrollbar = $('html, body');
-          var bFullscreen = $editor.hasClass('fullscreen');
-          if (bFullscreen) {
-            $editor.data('orgWidth', $editor.width());
+          $editor.toggleClass('fullscreen');
+          var isFullscreen = $editor.hasClass('fullscreen');
+          if (isFullscreen) {
             $editable.data('orgHeight', $editable.css('height'));
-            $(window).on('resize', hResizeFullscreen).trigger('resize');
+
+            $(window).on('resize', function () {
+              resize({
+                w: $(window).width(),
+                h: $(window).height() - $toolbar.outerHeight()
+              });
+            }).trigger('resize');
+
             $scrollbar.css('overflow', 'hidden');
           } else {
-            var orgWidth = $editor.data('orgWidth');
-            var newWidth = orgWidth === $(window).width() ? 'auto' : orgWidth;
-            $editor.css('width', newWidth);
-            var newHeight = $editable.data('orgHeight');
-            $editable.css('height', newHeight);
-            $codable.css('height', newHeight);
-            cmEditor = $codable.data('cmEditor');
-            if (cmEditor) {
-              cmEditor.setSize(null, newHeight);
-            }
-            $scrollbar.css('overflow', 'auto');
             $(window).off('resize');
+            resize({
+              w: options.width || '',
+              h: $editable.data('orgHeight')
+            });
+            $scrollbar.css('overflow', 'auto');
           }
-
-          toolbar.updateFullscreen($toolbar, bFullscreen);
+          toolbar.updateFullscreen($toolbar, isFullscreen);
         } else if (sEvent === 'codeview') {
           $editor.toggleClass('codeview');
 
@@ -2460,13 +2468,18 @@
       var $unhighlighted = $picker.find('.note-dimension-picker-unhighlighted');
 
       var posOffset;
+      // HTML5 with jQuery - e.offsetX is undefined in Firefox
       if (event.offsetX === undefined) {
-        // HTML5 with jQuery - e.offsetX is undefined in Firefox
         var posCatcher = $(event.target).offset();
-        posOffset = {x: event.pageX - posCatcher.left,
-                     y: event.pageY - posCatcher.top};
+        posOffset = {
+          x: event.pageX - posCatcher.left,
+          y: event.pageY - posCatcher.top
+        };
       } else {
-        posOffset = {x: event.offsetX, y: event.offsetY};
+        posOffset = {
+          x: event.offsetX,
+          y: event.offsetY
+        };
       }
 
       var dim = {
@@ -2527,9 +2540,49 @@
       });
 
       // attach dropImage
-      $dropzone.on('drop', function (e) {
-        hDropImage(e);
+      $dropzone.on('drop', function (event) {
+        var dataTransfer = event.originalEvent.dataTransfer;
+        if (dataTransfer && dataTransfer.files) {
+          var oLayoutInfo = makeLayoutInfo(event.currentTarget || event.target);
+          oLayoutInfo.editable().focus();
+          insertImages(oLayoutInfo.editable(), dataTransfer.files);
+        }
+        event.preventDefault();
       }).on('dragover', false); // prevent default dragover event
+    };
+
+
+    /**
+     * bind KeyMap on keydown
+     *
+     * @param {Object} oLayoutInfo
+     * @param {Object} keyMap
+     */
+    this.bindKeyMap = function (oLayoutInfo, keyMap) {
+      var $editor = oLayoutInfo.editor;
+      var $editable = oLayoutInfo.editable;
+
+      $editable.on('keydown', function (event) {
+        var aKey = [];
+
+        // modifier
+        if (event.metaKey) { aKey.push('CMD'); }
+        if (event.ctrlKey) { aKey.push('CTRL'); }
+        if (event.shiftKey) { aKey.push('SHIFT'); }
+
+        // keycode
+        var keyName = key.nameFromCode[event.keyCode];
+        if (keyName) { aKey.push(keyName); }
+
+        var handler = keyMap[aKey.join('+')];
+        if (handler) {
+          event.preventDefault();
+
+          editor[handler]($editable, $editor.data('options'));
+        } else if (key.isEdit(event.keyCode)) {
+          editor.recordUndo($editable);
+        }
+      });
     };
 
     /**
@@ -2540,7 +2593,9 @@
      * @param {Function} options.enter - enter key handler
      */
     this.attach = function (oLayoutInfo, options) {
-      oLayoutInfo.editable.on('keydown', hKeydown);
+      var keyMap = options.keyMap[agent.bMac ? 'mac' : 'pc'];
+      this.bindKeyMap(oLayoutInfo, keyMap);
+
       oLayoutInfo.editable.on('mousedown', hMousedown);
       oLayoutInfo.editable.on('keyup mouseup', hToolbarAndPopoverUpdate);
       oLayoutInfo.editable.on('scroll', hScroll);
@@ -2593,6 +2648,7 @@
       if (options.onblur) { oLayoutInfo.editable.blur(options.onblur); }
       if (options.onkeyup) { oLayoutInfo.editable.keyup(options.onkeyup); }
       if (options.onkeydown) { oLayoutInfo.editable.keydown(options.onkeydown); }
+      if (options.onpaste) { oLayoutInfo.editable.on('paste', options.onpaste); }
       if (options.onToolbarClick) { oLayoutInfo.toolbar.click(options.onToolbarClick); }
 
       // callbacks for advanced features (camel)
@@ -2601,10 +2657,8 @@
       oLayoutInfo.editable.data('callbacks', {
         onChange: options.onChange,
         onAutoSave: options.onAutoSave,
-        onPasteBefore: options.onPasteBefore,
-        onPasteAfter: options.onPasteAfter,
         onImageUpload: options.onImageUpload,
-        onImageUploadError: options.onImageUpload,
+        onImageUploadError: options.onImageUploadError,
         onFileUpload: options.onFileUpload,
         onFileUploadError: options.onFileUpload
       });
@@ -2632,7 +2686,7 @@
         return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.image.image + '" data-event="showImageDialog" tabindex="-1"><i class="fa fa-picture-o icon-picture"></i></button>';
       },
       link: function (lang) {
-        return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.link.link + '" data-event="showLinkDialog" data-shortcut="Ctrl+K" data-mac-shortcut="⌘+K" tabindex="-1"><i class="fa fa-link icon-link"></i></button>';
+        return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.link.link + '" data-event="showLinkDialog" tabindex="-1"><i class="fa fa-link icon-link"></i></button>';
       },
       video: function (lang) {
         return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.video.video + '" data-event="showVideoDialog" tabindex="-1"><i class="fa fa-youtube-play icon-play"></i></button>';
@@ -2759,7 +2813,7 @@
         '</ul>';
       },
       help: function (lang) {
-        return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.options.help + '" data-shortcut="Ctrl+/" data-mac-shortcut="⌘+/" data-event="showHelpDialog" tabindex="-1"><i class="fa fa-question icon-question"></i></button>';
+        return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.options.help + '" data-event="showHelpDialog" tabindex="-1"><i class="fa fa-question icon-question"></i></button>';
       },
       fullscreen: function (lang) {
         return '<button type="button" class="btn btn-default btn-sm btn-small" title="' + lang.options.fullscreen + '" data-event="fullscreen" tabindex="-1"><i class="fa fa-arrows-alt icon-fullscreen"></i></button>';
@@ -2846,7 +2900,6 @@
                  '<tr><td>⌘ + ⇧ + Z</td><td>' + lang.history.redo + '</td></tr>' +
                  '<tr><td>⌘ + ]</td><td>' + lang.paragraph.indent + '</td></tr>' +
                  '<tr><td>⌘ + [</td><td>' + lang.paragraph.outdent + '</td></tr>' +
-                 '<tr><td>⌘ + K</td><td>' + lang.link.insert + '</td></tr>' +
                  '<tr><td>⌘ + ENTER</td><td>' + lang.hr.insert + '</td></tr>' +
                '</tbody>' +
              '</table>';
