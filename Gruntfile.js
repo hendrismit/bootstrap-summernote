@@ -35,7 +35,12 @@ module.exports = function (grunt) {
     jshint: {
       all: {
         src: [
-          'src/**/*.js', 'Gruntfile.js', 'test/**/*.js', 'build/*.js'
+          'src/**/*.js',
+          'plugin/**/*.js',
+          'lang/**/*.js',
+          'Gruntfile.js',
+          'test/**/*.js',
+          'build/*.js'
         ],
         options: {
           jshintrc: true
@@ -69,6 +74,30 @@ module.exports = function (grunt) {
       }
     },
 
+    // compress: summernote-{{version}}-dist.zip
+    compress: {
+      main: {
+        options: {
+          archive: function () {
+            return 'dist/summernote-{{version}}-dist.zip'.replace(
+              '{{version}}',
+              grunt.config('pkg.version')
+            );
+          }
+        },
+        files: [{
+          expand: true,
+          src: [
+            'dist/*.js',
+            'dist/summernote.css'
+          ]
+        }, {
+          src: ['plugin/*.js'],
+          dest: 'dist/'
+        }]
+      }
+    },
+
     // connect configuration.
     connect: {
       all: {
@@ -98,24 +127,44 @@ module.exports = function (grunt) {
           livereload: true
         }
       }
+    },
+
+    // Meteor commands to test and publish package
+    exec: {
+      'meteor-test': {
+        command: 'meteor/runtests.sh'
+      },
+      'meteor-publish': {
+        command: 'meteor/publish.sh'
+      }
     }
+
   });
 
-  // load grunt tasks on package.json.
+  // load all tasks from the grunt plugins used in this file
   require('load-grunt-tasks')(grunt);
 
-  // server
-  grunt.registerTask('server', ['connect', 'watch']);
+  // load all grunts/*.js
+  grunt.loadTasks('grunts');
 
-  // build: build summernote.js
-  grunt.loadTasks('build');
+  // server: runt server for development
+  grunt.registerTask('server', ['connect', 'watch']);
 
   // test: unit test on test folder
   grunt.registerTask('test', ['jshint', 'qunit']);
 
-  // dist
+  // dist: make dist files
   grunt.registerTask('dist', ['build', 'test', 'uglify', 'recess']);
 
-  // default: build, test, dist.
-  grunt.registerTask('default', ['dist']);
+  // deploy: compress dist files
+  grunt.registerTask('deploy', ['dist', 'compress']);
+
+  // default: server
+  grunt.registerTask('default', ['server']);
+
+  // Meteor tasks
+  grunt.registerTask('meteor-test', 'exec:meteor-test');
+  grunt.registerTask('meteor-publish', 'exec:meteor-publish');
+  grunt.registerTask('meteor', ['meteor-test', 'meteor-publish']);
+
 };

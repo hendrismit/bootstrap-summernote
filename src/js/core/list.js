@@ -1,6 +1,11 @@
 define(['summernote/core/func'], function (func) {
   /**
+   * @class core.list
+   *
    * list utils
+   *
+   * @singleton
+   * @alternateClassName list
    */
   var list = (function () {
     /**
@@ -67,7 +72,7 @@ define(['summernote/core/func'], function (func) {
      * returns true if the value is present in the list.
      */
     var contains = function (array, item) {
-      return array.indexOf(item) !== -1;
+      return $.inArray(item, array) !== -1;
     };
 
     /**
@@ -139,16 +144,39 @@ define(['summernote/core/func'], function (func) {
       var results = [];
 
       for (var idx = 0, len = array.length; idx < len; idx ++) {
-        if (results.indexOf(array[idx]) === -1) {
+        if (!contains(results, array[idx])) {
           results.push(array[idx]);
         }
       }
 
       return results;
     };
+
+    /**
+     * returns next item.
+     * @param {Array} array
+     */
+    var next = function (array, item) {
+      var idx = array.indexOf(item);
+      if (idx === -1) { return null; }
+
+      return array[idx + 1];
+    };
+
+    /**
+     * returns prev item.
+     * @param {Array} array
+     */
+    var prev = function (array, item) {
+      var idx = array.indexOf(item);
+      if (idx === -1) { return null; }
+
+      return array[idx - 1];
+    };
+
   
     return { head: head, last: last, initial: initial, tail: tail,
-             find: find, contains: contains,
+             prev: prev, next: next, find: find, contains: contains,
              all: all, sum: sum, from: from,
              clusterBy: clusterBy, compact: compact, unique: unique };
   })();
