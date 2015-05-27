@@ -69,7 +69,9 @@ define('summernote/defaults', function () {
       toolbar: [
         ['style', ['style']],
         ['font', ['bold', 'italic', 'underline', 'clear']],
+        // ['font', ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
         ['fontname', ['fontname']],
+        ['fontsize', ['fontsize']],
         ['color', ['color']],
         ['para', ['ul', 'ol', 'paragraph']],
         ['height', ['height']],
@@ -78,6 +80,8 @@ define('summernote/defaults', function () {
         ['view', ['fullscreen', 'codeview']],
         ['help', ['help']]
       ],
+
+      plugin : { },
 
       // air mode: inline editor
       airMode: false,
@@ -113,6 +117,8 @@ define('summernote/defaults', function () {
         'Tahoma', 'Times New Roman', 'Verdana'
       ],
       fontNamesIgnoreCheck: [],
+
+      fontSizes: ['8', '9', '10', '11', '12', '14', '18', '24', '36'],
 
       // pallete colors(n x n)
       colors: [
@@ -238,7 +244,11 @@ define('summernote/defaults', function () {
           underline: 'Underline',
           clear: 'Remove Font Style',
           height: 'Line Height',
-          name: 'Font Family'
+          name: 'Font Family',
+          strikethrough: 'Strikethrough',
+          subscript: 'Subscript',
+          superscript: 'Superscript',
+          size: 'Font Size'
         },
         image: {
           image: 'Picture',

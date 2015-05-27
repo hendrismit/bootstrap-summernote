@@ -14,6 +14,7 @@ define([
     /**
      * @method jQueryCSS
      *
+     * [workaround] for old jQuery
      * passing an array of style properties to .css()
      * will result in an object of property-value pairs.
      * (compability with version < 1.9)
@@ -66,7 +67,7 @@ define([
       var onlyPartialContains = !!(options && options.onlyPartialContains);
 
       if (rng.isCollapsed()) {
-        return rng.insertNode(dom.create(nodeName));
+        return [rng.insertNode(dom.create(nodeName))];
       }
 
       var pred = dom.makePredByNodeName(nodeName);

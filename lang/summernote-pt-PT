@@ -1,6 +1,6 @@
 (function ($) {
   $.extend($.summernote.lang, {
-    'pt-BR': {
+    'pt-PT': {
       font: {
         bold: 'Negrito',
         italic: 'Itálico',
@@ -14,24 +14,24 @@
       image: {
         image: 'Imagem',
         insert: 'Inserir imagem',
-        resizeFull: 'Resize Full',
-        resizeHalf: 'Resize Half',
-        resizeQuarter: 'Resize Quarter',
-        floatLeft: 'Float Left',
-        floatRight: 'Float Right',
-        floatNone: 'Float None',
-        dragImageHere: 'Arraste uma imagem para cá',
+        resizeFull: 'Redimensionar Completo',
+        resizeHalf: 'Redimensionar Metade',
+        resizeQuarter: 'Redimensionar Um Quarto',
+        floatLeft: 'Float Esquerda',
+        floatRight: 'Float Direita',
+        floatNone: 'Sem Float',
+        dragImageHere: 'Arraste uma imagem para aqui',
         selectFromFiles: 'Selecione a partir dos arquivos',
-        url: 'URL da image'
+        url: 'Endereço da imagem'
       },
       link: {
         link: 'Link',
-        insert: 'Inserir link',
-        unlink: 'Remover link',
+        insert: 'Inserir ligação',
+        unlink: 'Remover ligação',
         edit: 'Editar',
         textToDisplay: 'Texto para exibir',
-        url: 'Para qual URL esse link leva?',
-        openInNewWindow: 'Abrir em uma nova janela'
+        url: 'Que endereço esta licação leva?',
+        openInNewWindow: 'Abrir numa nova janela'
       },
       table: {
         table: 'Tabela'
@@ -57,7 +57,7 @@
       },
       options: {
         help: 'Ajuda',
-        fullscreen: 'Tela cheia',
+        fullscreen: 'Janela Completa',
         codeview: 'Ver código-fonte'
       },
       paragraph: {

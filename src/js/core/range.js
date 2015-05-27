@@ -183,6 +183,8 @@ define([
         } else {
           nativeRng.select();
         }
+        
+        return this;
       };
 
       /**
@@ -487,6 +489,21 @@ define([
 
         return node;
       };
+
+      /**
+       * insert html at current cursor
+       */
+      this.pasteHTML = function (markup) {
+        var self = this;
+        var contentsContainer = $('<div></div>').html(markup)[0];
+        var childNodes = list.from(contentsContainer.childNodes);
+
+        this.wrapBodyInlineWithPara().deleteContents();
+
+        return $.map(childNodes.reverse(), function (childNode) {
+          return self.insertNode(childNode);
+        }).reverse();
+      };
   
       /**
        * returns text in range
@@ -496,6 +513,37 @@ define([
       this.toString = function () {
         var nativeRng = nativeRange();
         return agent.isW3CRangeSupport ? nativeRng.toString() : nativeRng.text;
+      };
+
+      /**
+       * returns range for word before cursor
+       *
+       * @param {Boolean} [findAfter] - find after cursor, default: false
+       * @return {WrappedRange}
+       */
+      this.getWordRange = function (findAfter) {
+        var endPoint = this.getEndPoint();
+
+        if (!dom.isCharPoint(endPoint)) {
+          return this;
+        }
+
+        var startPoint = dom.prevPointUntil(endPoint, function (point) {
+          return !dom.isCharPoint(point);
+        });
+
+        if (findAfter) {
+          endPoint = dom.nextPointUntil(endPoint, function (point) {
+            return !dom.isCharPoint(point);
+          });
+        }
+
+        return new WrappedRange(
+          startPoint.node,
+          startPoint.offset,
+          endPoint.node,
+          endPoint.offset
+        );
       };
   
       /**
@@ -572,7 +620,7 @@ define([
         if (!arguments.length) { // from Browser Selection
           if (agent.isW3CRangeSupport) {
             var selection = document.getSelection();
-            if (selection.rangeCount === 0) {
+            if (!selection || selection.rangeCount === 0) {
               return null;
             } else if (dom.isBody(selection.anchorNode)) {
               // Firefox: returns entire body as range on initialization. We won't never need it.
@@ -641,6 +689,26 @@ define([
         }
 
         return this.create(sc, so, ec, eo);
+      },
+
+      /**
+       * create WrappedRange from node after position
+       *
+       * @param {Node} node
+       * @return {WrappedRange}
+       */
+      createFromNodeBefore: function (node) {
+        return this.createFromNode(node).collapse(true);
+      },
+
+      /**
+       * create WrappedRange from node after position
+       *
+       * @param {Node} node
+       * @return {WrappedRange}
+       */
+      createFromNodeAfter: function (node) {
+        return this.createFromNode(node).collapse();
       },
 
       /**

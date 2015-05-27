@@ -1,4 +1,6 @@
-define(function () {
+define([
+  'summernote/core/key'
+], function (key) {
   var LinkDialog = function (handler) {
 
     /**
@@ -11,6 +13,21 @@ define(function () {
     var toggleBtn = function ($btn, isEnable) {
       $btn.toggleClass('disabled', !isEnable);
       $btn.attr('disabled', !isEnable);
+    };
+
+    /**
+     * bind enter key
+     *
+     * @private
+     * @param {jQuery} $input
+     * @param {jQuery} $btn
+     */
+    var bindEnterKey = function ($input, $btn) {
+      $input.on('keypress', function (event) {
+        if (event.keyCode === key.code.ENTER) {
+          $btn.trigger('click');
+        }
+      });
     };
 
     /**
@@ -34,6 +51,7 @@ define(function () {
           $linkText.val(linkInfo.text);
 
           $linkText.on('input', function () {
+            toggleBtn($linkBtn, $linkText.val() && $linkUrl.val());
             // if linktext was modified by keyup,
             // stop cloning text from linkUrl
             linkInfo.text = $linkText.val();
@@ -46,13 +64,16 @@ define(function () {
           }
 
           $linkUrl.on('input', function () {
-            toggleBtn($linkBtn, $linkUrl.val());
+            toggleBtn($linkBtn, $linkText.val() && $linkUrl.val());
             // display same link on `Text to display` input
             // when create a new link
             if (!linkInfo.text) {
               $linkText.val($linkUrl.val());
             }
           }).val(linkInfo.url).trigger('focus').trigger('select');
+
+          bindEnterKey($linkUrl, $linkBtn);
+          bindEnterKey($linkText, $linkBtn);
 
           $openInNewWindow.prop('checked', linkInfo.newWindow);
 
@@ -69,8 +90,8 @@ define(function () {
           });
         }).one('hidden.bs.modal', function () {
           // detach events
-          $linkText.off('input');
-          $linkUrl.off('input');
+          $linkText.off('input keypress');
+          $linkUrl.off('input keypress');
           $linkBtn.off('click');
 
           if (deferred.state() === 'pending') {
